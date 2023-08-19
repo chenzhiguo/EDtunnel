@@ -122,6 +122,24 @@ export default {
 							}
 						});
 					}
+					case `/subscribe/${userID_Path}`: {
+						const url = new URL(request.url);
+						const searchParams = url.searchParams;
+						let vlessConfig = await createVLESSSubByOptimizationIp(userID, request.headers.get('Host'));
+
+						// If 'format' query param equals to 'clash', convert config to base64
+						if (searchParams.get('format') === 'clash') {
+							vlessConfig = btoa(vlessConfig);
+						}
+
+						// Construct and return response object
+						return new Response(vlessConfig, {
+							status: 200,
+							headers: {
+								"Content-Type": "text/plain;charset=utf-8",
+							}
+						});
+					}
 					default:
 						// return new Response('Not found', { status: 404 });
 						// For any other path, reverse proxy to 'www.fmprc.gov.cn' and return the original response, caching it in the process
@@ -975,3 +993,90 @@ function createVLESSSub(userID_Path, hostName) {
 	return output.join('\n');
 }
 
+async function createVLESSSubByOptimizationIp(userID_Path, hostName) {
+	// let portArray_http = [80, 8080, 8880, 2052, 2086, 2095];
+	// let portArray_https = [443, 8443, 2053, 2096, 2087, 2083];
+	let portArray_http = [];
+	let portArray_https = [443, 2096];
+
+	// Split the userIDs into an array
+	let userIDArray = userID_Path.includes(',') ? userID_Path.split(',') : [userID_Path];
+	const cfips = await requestCFIps(options.url, options);
+	const ips = [];
+	for (let item of cfips.info) {
+		ips.push(item.ip);
+	}
+	const allProxyIPs = proxyIPs.concat(ips);
+	console.log(ips);
+	// Prepare output array
+	let output = [];
+
+	// Generate output string for each userID
+	userIDArray.forEach((userID) => {
+		// Check if the hostName is a Cloudflare Pages domain, if not, generate HTTP configurations
+		// reasons: pages.dev not support http only https
+		if (!hostName.includes('pages.dev')) {
+			// Iterate over all ports for http
+			portArray_http.forEach((port) => {
+				const commonUrlPart_http = `:${port}?encryption=none&security=none&fp=random&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}-HTTP`;
+				const vlessMainHttp = `vless://${userID}@${hostName}${commonUrlPart_http}`;
+
+				// For each proxy IP, generate a VLESS configuration and add to output
+				allProxyIPs.forEach((proxyIP) => {
+					const vlessSecHttp = `vless://${userID}@${proxyIP}${commonUrlPart_http}-${proxyIP}-EDtunnel`;
+					output.push(`${vlessMainHttp}`);
+					output.push(`${vlessSecHttp}`);
+				});
+			});
+		}
+		// Iterate over all ports for https
+		portArray_https.forEach((port) => {
+			const commonUrlPart_https = `:${port}?encryption=none&security=tls&sni=${hostName}&fp=random&type=ws&host=${hostName}&path=%2F%3Fed%3D2048#${hostName}-HTTPS`;
+			const vlessMainHttps = `vless://${userID}@${hostName}${commonUrlPart_https}`;
+
+			// For each proxy IP, generate a VLESS configuration and add to output
+			allProxyIPs.forEach((proxyIP) => {
+				const vlessSecHttps = `vless://${userID}@${proxyIP}${commonUrlPart_https}-${proxyIP}-EDtunnel`;
+				output.push(`${vlessMainHttps}`);
+				output.push(`${vlessSecHttps}`);
+			});
+		});
+	});
+	const setResponse = new Set(output);
+	const newResponse = [...setResponse]; 
+	// Join output with newlines
+	return newResponse.join('\n');
+}
+
+const options = {
+  url: 'https://api.hostmonit.com/get_optimization_ip',
+  method: 'POST',
+  headers: {
+    'authority': 'api.hostmonit.com',
+    'accept': 'application/json, text/plain, */*',
+    'accept-language': 'zh-CN,zh;q=0.7',
+    'content-type': 'application/json',
+    'origin': 'https://stock.hostmonit.com',
+    'referer': 'https://stock.hostmonit.com/',
+    'sec-ch-ua': '"Not/A)Brand";v="99", "Brave";v="115", "Chromium";v="115"',
+    'sec-ch-ua-mobile': '?0',
+    'sec-ch-ua-platform': '"macOS"',
+    'sec-fetch-dest': 'empty',
+    'sec-fetch-mode': 'cors',
+    'sec-fetch-site': 'same-site',
+    'sec-gpc': '1',
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+  },
+  data: {key: 'iDetkOys'}
+};
+
+async function requestCFIps(url, options) {
+	const response = await fetch(url, {
+	  method: options.method,
+	  headers: options.headers,
+	  body: JSON.stringify(options.data) 
+	});
+  
+	const data = await response.json();
+	return data;
+}
