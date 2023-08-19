@@ -1,1 +1,1 @@
-This folder contains the built output assets for the worker "cf-worker-ws-dev" generated at 2023-08-19T14:58:41.597Z.
+This folder contains the built output assets for the worker "cf-worker-ws-dev" generated at 2023-08-19T15:12:49.216Z.

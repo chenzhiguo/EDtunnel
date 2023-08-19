@@ -1001,13 +1001,9 @@ async function createVLESSSubByOptimizationIp(userID_Path, hostName) {
 
 	// Split the userIDs into an array
 	let userIDArray = userID_Path.includes(',') ? userID_Path.split(',') : [userID_Path];
-	const cfips = await requestCFIps(options.url, options);
-	const ips = [];
-	for (let item of cfips.info) {
-		ips.push(item.ip);
-	}
+	const ips = await requestCFIps(options.url, options);
 	const allProxyIPs = proxyIPs.concat(ips);
-	console.log(ips);
+	// console.log(ips);
 	// Prepare output array
 	let output = [];
 
@@ -1078,5 +1074,9 @@ async function requestCFIps(url, options) {
 	});
   
 	const data = await response.json();
-	return data;
+	const ips = [];
+	for (let item of data.info) {
+		ips.push(item.ip);
+	}
+	return ips;
 }
