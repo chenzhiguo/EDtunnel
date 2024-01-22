@@ -60,8 +60,8 @@ export default {
 						const searchParams = url.searchParams;
 						let vlessConfig = createVLESSSub(userID, request.headers.get('Host'));
 						// If 'format' query param equals to 'clash', convert config to base64
-						if (searchParams.get('format') === 'clash') {
-							vlessConfig = btoa(vlessConfig);
+						if (searchParams.get('format') === 'text') {
+							vlessConfig = vlessConfig;
 						}
 						// Construct and return response object
 						return new Response(vlessConfig, {
@@ -82,7 +82,7 @@ export default {
 						}
 
 						// Construct and return response object
-						return new Response(vlessConfig, {
+						return new Response(btoa(vlessConfig), {
 							status: 200,
 							headers: {
 								"Content-Type": "text/plain;charset=utf-8",
@@ -90,7 +90,7 @@ export default {
 						});
 					}
 					case `/bestip/${userID_Path}`: {
-						const bestiplink = `https://sub.xf.free.hr/auto?host=${request.headers.get('Host')}&uuid=${userID_Path}`
+						const bestiplink = `https://sub.xijingping.gay/api/sub?host=${request.headers.get('Host')}&uuid=${userID_Path}`
 						const reqHeaders = new Headers(request.headers);
 						const bestipresponse = await fetch(bestiplink, { redirect: 'manual', headers: reqHeaders, });
 						// Construct and return response object
@@ -743,7 +743,8 @@ function getVLESSConfig(userIDs, hostName) {
 	// Prepare output array
 	let output = [];
 	let header = [];
-	const clash_link = `https://subconverter.do.xn--b6gac.eu.org/sub?target=clash&url=https://${hostName}/sub/${userIDArray[0]}?format=clash&insert=false&emoji=true&list=false&tfo=false&scv=true&fdn=false&sort=false&new_name=true`;
+	const sublink = `https://${hostName}/sub/${userIDArray[0]}`
+	const clash_link = `https://subconverter.do.xn--b6gac.eu.org/sub?target=clash&url=${encodeURIComponent(sublink)}&insert=false&emoji=true&list=false&tfo=false&scv=true&fdn=false&sort=false&new_name=true`;
 	header.push(`\n<p align="center"><img src="https://cloudflare-ipfs.com/ipfs/bafybeigd6i5aavwpr6wvnwuyayklq3omonggta4x2q7kpmgafj357nkcky" alt="图片描述" style="margin-bottom: -50px;">`);
 	header.push(`\n<b style=" font-size: 15px;" >Welcome! This function generates configuration for VLESS protocol. If you found this useful, please check our GitHub project for more:</b>\n`);
 	header.push(`<b style=" font-size: 15px;" >欢迎！这是生成 VLESS 协议的配置。如果您发现这个项目很好用，请查看我们的 GitHub 项目给我一个star：</b>\n`);
