@@ -82,7 +82,7 @@ export default {
 						}
 
 						// Construct and return response object
-						return new Response(btoa(vlessConfig), {
+						return new Response(vlessConfig, {
 							status: 200,
 							headers: {
 								"Content-Type": "text/plain;charset=utf-8",
